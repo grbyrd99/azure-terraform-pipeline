@@ -100,10 +100,11 @@ resource "azurerm_storage_account" "lab" {
     }
   }
 
-   sas_policy {
+     sas_policy {
     expiration_period = "01.00:00:00"
     expiration_action = "Log"
   }
+}
 
 resource "random_string" "suffix" {
   length  = 6
