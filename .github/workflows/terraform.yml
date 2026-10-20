@@ -95,6 +95,45 @@ jobs:
           exit 1
 
   # -------------------------------------------------------------------------
+  # SECURITY SCAN — runs on every pull request, alongside Plan.
+  # Gitleaks looks for committed secrets; Checkov looks for Terraform
+  # misconfigurations. Results land in the repo's Security tab.
+  # -------------------------------------------------------------------------
+  security-scan:
+    name: Security scan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, so Gitleaks can scan every commit
+
+      - name: Gitleaks (secret scan)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkov (IaC misconfiguration scan)
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload Checkov results to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: checkov
+
+  # -------------------------------------------------------------------------
   # APPLY — runs on merge to main, and only after a human approves.
   # The gate is the GitHub Environment, not anything in this file.
   # -------------------------------------------------------------------------
