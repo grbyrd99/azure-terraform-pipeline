@@ -75,6 +75,14 @@ resource "azurerm_subnet_network_security_group_association" "app" {
 }
 
 resource "azurerm_storage_account" "lab" {
+  #checkov:skip=CKV_AZURE_206:Lab only; LRS acceptable for disposable data
+  #checkov:skip=CKV2_AZURE_33:Lab only; no private networking in scope
+  #checkov:skip=CKV_AZURE_59:Lab only; hosted runner uses public endpoint
+  #checkov:skip=CKV2_AZURE_40:Phase 2; move to Azure AD-only data access
+  #checkov:skip=CKV2_AZURE_1:Lab only; Microsoft-managed keys acceptable
+  #checkov:skip=CKV_AZURE_33:Queue service not used in this lab
+  #checkov:skip=CKV2_AZURE_41:sas_policy is configured; Checkov does not detect it
+
   name                            = "st${var.project}${var.environment}${random_string.suffix.result}"
   resource_group_name             = azurerm_resource_group.lab.name
   location                        = azurerm_resource_group.lab.location
@@ -83,6 +91,20 @@ resource "azurerm_storage_account" "lab" {
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
   tags                            = local.tags
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+    container_delete_retention_policy {
+      days = 7
+    }
+  }
+
+  sas_policy {
+    expiration_period = "01.00:00:00"
+    expiration_action = "Log"
+  }
 }
 
 resource "random_string" "suffix" {
