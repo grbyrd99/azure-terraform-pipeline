@@ -81,6 +81,7 @@ resource "azurerm_storage_account" "lab" {
   #checkov:skip=CKV2_AZURE_40:Phase 2; move to Azure AD-only data access
   #checkov:skip=CKV2_AZURE_1:Lab only; Microsoft-managed keys acceptable
   #checkov:skip=CKV_AZURE_33:Queue service not used in this lab
+  #checkov:skip=CKV2_AZURE_41:sas_policy is configured; Checkov does not detect it
 
   name                            = "st${var.project}${var.environment}${random_string.suffix.result}"
   resource_group_name             = azurerm_resource_group.lab.name
@@ -100,7 +101,7 @@ resource "azurerm_storage_account" "lab" {
     }
   }
 
-     sas_policy {
+    sas_policy {
     expiration_period = "01.00:00:00"
     expiration_action = "Log"
   }
